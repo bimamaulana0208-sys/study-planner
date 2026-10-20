@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Planner Interactive - Multi Profile</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for Achievements -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eep2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Glassmorphism utility */
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="app" class="flex flex-col md:flex-row min-h-screen w-full relative">
+
+        <!-- DESKTOP SIDEBAR -->
+        <aside class="hidden md:flex md:w-64 bg-slate-900 text-white flex-col justify-between shrink-0 shadow-xl">
+            <div>
+                <!-- Brand Header -->
+                <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                        <i class="fa-solid font-bold fa-book-open-reader text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">Study Planner</h1>
+                        <span class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Interactive App</span>
+                    </div>
+                </div>
+
+                <!-- Profile Card in Sidebar -->
+                <div class="m-4 p-3 bg-slate-800/80 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <div id="sidebar-avatar" class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-sm shrink-0">
+                            ?
+                        </div>
+                        <div class="truncate">
+                            <p id="sidebar-user-name" class="text-sm font-semibold text-white truncate">Belum Ada Profil</p>
+                            <p id="sidebar-user-target" class="text-xs text-slate-400 truncate">Pilih profil...</p>
+                        </div>
+                    </div>
+                    <button onclick="openProfileModal()" class="text-slate-400 hover:text-indigo-400 p-1.5 transition-colors" title="Ganti / Tambah Nama">
+                        <i class="fa-solid fa-users-gear text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="px-3 py-2 space-y-1">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-indigo-400 bg-indigo-900/40 border border-indigo-700/50">
+                        <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button onclick="switchTab('profile')" id="nav-profile" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-slate-200">
+                        <i class="fa-solid fa-user-gear w-5 text-center"></i>
+                        <span>Profil & Target</span>
+                    </button>
+                    <button onclick="switchTab('subjects')" id="nav-subjects" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-slate-200">
+                        <i class="fa-solid fa-book w-5 text-center"></i>
+                        <span>Mata Pelajaran</span>
+                    </button>
+                    <button onclick="switchTab('generator')" id="nav-generator" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-slate-200">
+                        <i class="fa-solid fa-wand-magic-sparkles w-5 text-center"></i>
+                        <span>Generator Jadwal</span>
+                    </button>
+                    <button onclick="switchTab('checklist')" id="nav-checklist" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-slate-200">
+                        <i class="fa-solid fa-list-check w-5 text-center"></i>
+                        <span>Jadwal & Progress</span>
+                    </button>
+                    <button onclick="switchTab('errorlog')" id="nav-errorlog" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-slate-200">
+                        <i class="fa-solid fa-file-circle-exclamation w-5 text-center"></i>
+                        <span>Error Log / Evaluasi</span>
+                    </button>
+                    <button onclick="switchTab('pomodoro')" id="nav-pomodoro" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-slate-200">
+                        <i class="fa-solid fa-stopwatch w-5 text-center"></i>
+                        <span>Timer Belajar</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Footer Sidebar -->
+            <div class="p-4 border-t border-slate-800 text-center">
+                <p class="text-xs text-slate-500">Sesuai Modul Rencana Kerja</p>
+                <p class="text-[11px] font-semibold text-slate-400 mt-0.5">Moh. Bima Maulana © 2026</p>
+            </div>
+        </aside>
+
+        <!-- TOP BAR FOR MOBILE -->
+        <header class="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-sm">
+                    <i class="fa-solid fa-book-open-reader"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm">Study Planner</h1>
+                    <p id="mobile-header-user" class="text-xs text-slate-400 truncate max-w-[120px]">Memuat...</p>
+                </div>
+            </div>
+            <button onclick="openProfileModal()" class="px-3 py-1.5 bg-indigo-600/80 hover:bg-indigo-600 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-colors">
+                <i class="fa-solid fa-user-pen"></i>
+                <span>Ganti Profil</span>
+            </button>
+        </header>
+
+        <!-- CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 bg-slate-50">
+
+            <!-- ACTIVE PROFILE BANNER TOP HEADER -->
+            <div class="mb-6 bg-white border border-slate-200/80 shadow-sm rounded-2xl p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-center space-x-4">
+                    <div id="top-user-avatar" class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-bold text-xl flex items-center justify-center shadow-md shadow-indigo-200">
+                        ?
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h2 id="top-greeting" class="text-lg md:text-xl font-bold text-slate-800">Halo! Selamat Datang 👋</h2>
+                            <span id="top-target-tag" class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 hidden">Target Active</span>
+                        </div>
+                        <p id="top-user-sub" class="text-xs md:text-sm text-slate-500 mt-0.5">Silakan isi nama Anda untuk memulai perencanaan belajar secara gratis!</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 self-end md:self-auto w-full md:w-auto">
+                    <button onclick="openProfileModal()" class="flex-1 md:flex-none px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium text-xs md:text-sm rounded-xl transition-all border border-indigo-100 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Pilih / Tambah Nama</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 1: DASHBOARD -->
+            <section id="tab-dashboard" class="tab-content space-y-6">
+                <!-- Stats Overview Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase">Progres Belajar</span>
+                            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm"><i class="fa-solid fa-chart-line"></i></div>
+                        </div>
+                        <p id="dash-progress-percent" class="text-2xl font-extrabold text-slate-800 mt-2">0%</p>
+                        <div class="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
+                            <div id="dash-progress-bar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                        <p id="dash-progress-text" class="text-[11px] text-slate-500 mt-2">0 dari 0 tugas selesai</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase">Mata Pelajaran</span>
+                            <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm"><i class="fa-solid fa-book"></i></div>
+                        </div>
+                        <p id="dash-total-subjects" class="text-2xl font-extrabold text-slate-800 mt-2">0</p>
+                        <p class="text-[11px] text-slate-500 mt-4">Terdaftar dalam kurikulum</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase">Target Selesai</span>
+                            <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm"><i class="fa-solid fa-bullseye"></i></div>
+                        </div>
+                        <p id="dash-target-days" class="text-2xl font-extrabold text-slate-800 mt-2">-</p>
+                        <p id="dash-target-date" class="text-[11px] text-slate-500 mt-4">Belum ditentukan</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-400 uppercase">Error Log Evaluasi</span>
+                            <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        </div>
+                        <p id="dash-total-errors" class="text-2xl font-extrabold text-slate-800 mt-2">0</p>
+                        <p class="text-[11px] text-slate-500 mt-4">Topik perlu diulang/direvisi</p>
+                    </div>
+                </div>
+
+                <!-- Main Section Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column: Quick Schedule & Quick Actions -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Upcoming Schedule Today -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">Agenda Belajar Hari Ini</h3>
+                                    <p class="text-xs text-slate-500">Aktivitas terdekat berdasarkan Jadwal Ter-generate</p>
+                                </div>
+                                <button onclick="switchTab('checklist')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+                                    <span>Lihat Semua</span>
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                            </div>
+                            <div id="dash-today-schedule" class="space-y-3">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Quick Guide / Workflow Banner -->
+                        <div class="bg-gradient-to-r from-indigo-900 to-slate-900 rounded-2xl p-6 text-white relative overflow-hidden shadow-lg">
+                            <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl"></div>
+                            <h3 class="font-bold text-lg mb-2 flex items-center space-x-2">
+                                <i class="fa-solid fa-rocket text-indigo-400"></i>
+                                <span>Langkah Mudah Memulai Belajar</span>
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mt-4">
+                                <div class="bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10">
+                                    <span class="w-5 h-5 bg-indigo-500 text-white font-bold rounded-full inline-flex items-center justify-center text-[10px] mb-2">1</span>
+                                    <p class="font-semibold text-slate-200">Input Mapel</p>
+                                    <p class="text-slate-400 text-[11px] mt-1">Atur kesulitan & bobot materi.</p>
+                                </div>
+                                <div class="bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10">
+                                    <span class="w-5 h-5 bg-indigo-500 text-white font-bold rounded-full inline-flex items-center justify-center text-[10px] mb-2">2</span>
+                                    <p class="font-semibold text-slate-200">Generate Jadwal</p>
+                                    <p class="text-slate-400 text-[11px] mt-1">Sistem menyusun jadwal otomatis.</p>
+                                </div>
+                                <div class="bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10">
+                                    <span class="w-5 h-5 bg-indigo-500 text-white font-bold rounded-full inline-flex items-center justify-center text-[10px] mb-2">3</span>
+                                    <p class="font-semibold text-slate-200">Centang Progress</p>
+                                    <p class="text-slate-400 text-[11px] mt-1">Gunakan timer Pomodoro & catat error log.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Quick Pomodoro & Target Info -->
+                    <div class="space-y-6">
+                        <!-- Quick Pomodoro Widget -->
+                        <div class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-6 rounded-2xl shadow-md text-center relative">
+                            <span class="text-[10px] font-bold tracking-widest uppercase text-indigo-400 bg-indigo-900/60 px-3 py-1 rounded-full border border-indigo-700/50">Quick Pomodoro</span>
+                            <div class="text-4xl font-black my-4 font-mono text-emerald-400" id="dash-timer-display">25:00</div>
+                            <div class="flex justify-center space-x-2 mb-3">
+                                <button onclick="quickPomodoroToggle()" id="dash-timer-btn" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20">
+                                    <i class="fa-solid fa-play mr-1"></i> Mulai
+                                </button>
+                                <button onclick="resetPomodoro()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition-all">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </button>
+                            </div>
+                            <p class="text-[11px] text-slate-400">Tekan mulai untuk fokus belajar 25 menit!</p>
+                        </div>
+
+                        <!-- Target Summary Card -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center justify-between">
+                                <span>Target Saya</span>
+                                <button onclick="switchTab('profile')" class="text-indigo-600 text-xs hover:underline">Edit</button>
+                            </h4>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between py-1 border-b border-slate-100">
+                                    <span class="text-slate-500">Nama Pengguna:</span>
+                                    <span id="dash-profile-name" class="font-semibold text-slate-800">-</span>
+                                </div>
+                                <div class="flex justify-between py-1 border-b border-slate-100">
+                                    <span class="text-slate-500">Ujian / Goal:</span>
+                                    <span id="dash-profile-goal" class="font-semibold text-slate-800">-</span>
+                                </div>
+                                <div class="flex justify-between py-1 border-b border-slate-100">
+                                    <span class="text-slate-500">Durasi Target:</span>
+                                    <span id="dash-profile-duration" class="font-semibold text-slate-800">-</span>
+                                </div>
+                                <div class="flex justify-between py-1">
+                                    <span class="text-slate-500">Jam Belajar Harian:</span>
+                                    <span id="dash-profile-hours" class="font-semibold text-slate-800">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: PROFIL & TARGET -->
+            <section id="tab-profile" class="tab-content hidden max-w-3xl mx-auto">
+                <div class="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-sm">
+                    <div class="border-b border-slate-100 pb-4 mb-6">
+                        <h2 class="text-lg md:text-xl font-bold text-slate-800">Pengaturan Profil & Target Belajar</h2>
+                        <p class="text-xs md:text-sm text-slate-500 mt-1">Konfigurasikan sasaran belajar Anda untuk mempersonalisasi rekomendasi jadwal.</p>
+                    </div>
+
+                    <form id="form-profile" onsubmit="saveProfileForm(event)" class="space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Lengkap / Panggilan <span class="text-rose-500">*</span></label>
+                                <input type="text" id="prof-input-name" required placeholder="Contoh: Bima Maulana" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kelas / Status Target</label>
+                                <input type="text" id="prof-input-class" placeholder="Contoh: Kelas 12 IPA / UTBK / Umum" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Target Utama / Nama Ujian <span class="text-rose-500">*</span></label>
+                            <input type="text" id="prof-input-goal" required placeholder="Contoh: SNBT 2026 / Ujian Akhir Semester" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Tanggal Target Ujian</label>
+                                <input type="date" id="prof-input-date" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Durasi Belajar (Hari) <span class="text-rose-500">*</span></label>
+                                <input type="number" id="prof-input-duration" min="1" max="180" value="14" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Batas Jam Per Hari</label>
+                                <input type="number" id="prof-input-maxhours" min="1" max="12" value="2" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Waktu Belajar Ideal (Jam Mulai)</label>
+                                <input type="time" id="prof-input-starttime" value="19:00" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Waktu Belajar Selesai</label>
+                                <input type="time" id="prof-input-endtime" value="21:00" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex justify-end space-x-3 border-t border-slate-100">
+                            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition-colors shadow-md shadow-indigo-200">
+                                <i class="fa-solid fa-floppy-disk mr-2"></i> Simpan Profil & Target
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- TAB 3: KELOLA MATA PELAJARAN -->
+            <section id="tab-subjects" class="tab-content hidden space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-800">Kelola Mata Pelajaran</h2>
+                        <p class="text-xs md:text-sm text-slate-500">Tambahkan mata pelajaran, tingkat kesulitan, dan prioritas belajar Anda.</p>
+                    </div>
+                    <button onclick="openSubjectModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm font-semibold rounded-xl transition-all shadow-md shadow-indigo-200 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Tambah Mapel Baru</span>
+                    </button>
+                </div>
+
+                <!-- Subjects Grid -->
+                <div id="subjects-list-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dynamic rendering -->
+                </div>
+            </section>
+
+            <!-- TAB 4: GENERATOR JADWAL -->
+            <section id="tab-generator" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+                <div class="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-sm text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl mx-auto mb-4">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800">Smart Schedule Generator</h2>
+                    <p class="text-xs md:text-sm text-slate-500 max-w-lg mx-auto mt-1">
+                        Sistem akan mengkalkulasi mata pelajaran, bobot kesulitan (Mudah, Sedang, Sulit), dan durasi target Anda untuk menghasilkan jadwal belajar harian secara otomatis.
+                    </p>
+
+                    <!-- Summary status of input prerequisites -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto my-6 text-left text-xs">
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center space-x-3">
+                            <i id="gen-check-prof" class="fa-solid fa-circle-check text-emerald-500 text-base"></i>
+                            <div>
+                                <p class="font-semibold text-slate-700">Profil & Target Target</p>
+                                <p id="gen-text-prof" class="text-slate-500 text-[11px]">Siap</p>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center space-x-3">
+                            <i id="gen-check-subj" class="fa-solid fa-circle-check text-emerald-500 text-base"></i>
+                            <div>
+                                <p class="font-semibold text-slate-700">Daftar Mata Pelajaran</p>
+                                <p id="gen-text-subj" class="text-slate-500 text-[11px]">0 Mapel terdaftar</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="generateScheduleAlgorithm()" class="px-8 py-3 bg-gradient-to-r from-indigo-600 to-emerald-600 hover:from-indigo-700 hover:to-emerald-700 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-indigo-200 inline-flex items-center space-x-2">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Generate Jadwal Belajar Otomatis</span>
+                    </button>
+                </div>
+
+                <!-- Generated Schedule Preview Container -->
+                <div id="generated-schedule-container" class="space-y-4">
+                    <!-- Render generated schedule cards here -->
+                </div>
+            </section>
+
+            <!-- TAB 5: CHECKLIST & PROGRESS -->
+            <section id="tab-checklist" class="tab-content hidden space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-800">Checklist & Progress Belajar Harian</h2>
+                        <p class="text-xs md:text-sm text-slate-500">Tandai topik yang sudah Anda pelajari untuk memperbarui persentase progress.</p>
+                    </div>
+                    <!-- Filter By Day -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-slate-500 font-medium">Filter Hari:</span>
+                        <select id="checklist-day-filter" onchange="renderChecklist()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-indigo-500 bg-white">
+                            <option value="all">Semua Hari</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Checklist Table / List View -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div id="checklist-container" class="divide-y divide-slate-100">
+                        <!-- Dynamic Checklists -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: ERROR LOG / EVALUASI MATERI -->
+            <section id="tab-errorlog" class="tab-content hidden space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-800">Error Log / Catatan Materi Sulit</h2>
+                        <p class="text-xs md:text-sm text-slate-500">Catat soal atau konsep yang sering salah agar bisa diulas kembali sebelum ujian.</p>
+                    </div>
+                    <button onclick="openErrorLogModal()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs md:text-sm font-semibold rounded-xl transition-all shadow-md shadow-rose-200 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Tambah Catatan Error</span>
+                    </button>
+                </div>
+
+                <!-- Error Logs Grid -->
+                <div id="error-logs-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Dynamic rendering -->
+                </div>
+            </section>
+
+            <!-- TAB 7: TIMER POMODORO -->
+            <section id="tab-pomodoro" class="tab-content hidden max-w-2xl mx-auto space-y-6">
+                <div class="bg-white rounded-3xl p-6 md:p-10 border border-slate-200/80 shadow-lg text-center space-y-6">
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="setPomodoroMode('study')" id="pomo-mode-study" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-indigo-600 text-white">Focus Study (25m)</button>
+                        <button onclick="setPomodoroMode('short')" id="pomo-mode-short" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Istirahat Singkat (5m)</button>
+                        <button onclick="setPomodoroMode('long')" id="pomo-mode-long" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Istirahat Panjang (15m)</button>
+                    </div>
+
+                    <!-- Big Timer Display -->
+                    <div class="py-6">
+                        <div id="pomo-display" class="text-6xl md:text-8xl font-black font-mono text-slate-800 tracking-tight">25:00</div>
+                        <p id="pomo-status-text" class="text-xs md:text-sm text-slate-500 mt-2 font-medium">Sesi Belajar Aktif. Tetap Fokus!</p>
+                    </div>
+
+                    <!-- Timer Controls -->
+                    <div class="flex justify-center items-center space-x-4">
+                        <button onclick="togglePomodoroTimer()" id="pomo-main-btn" class="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-base transition-all shadow-lg shadow-indigo-300/50 flex items-center space-x-2">
+                            <i id="pomo-icon" class="fa-solid fa-play"></i>
+                            <span id="pomo-btn-text">Mulai Fokus</span>
+                        </button>
+                        <button onclick="resetPomodoro()" class="p-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-2xl transition-all">
+                            <i class="fa-solid fa-rotate-left text-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- Session Stats Counter -->
+                    <div class="pt-6 border-t border-slate-100 flex justify-around text-xs">
+                        <div>
+                            <p class="text-slate-400">Total Sesi Hari Ini</p>
+                            <p id="pomo-completed-count" class="text-lg font-bold text-slate-800 mt-0.5">0 Sesi</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-400">Total Waktu Fokus</p>
+                            <p id="pomo-total-time" class="text-lg font-bold text-indigo-600 mt-0.5">0 Menit</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- MOBILE BOTTOM NAVIGATION -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-30 flex justify-around p-2">
+            <button onclick="switchTab('dashboard')" class="mobile-nav-btn text-indigo-400 flex flex-col items-center p-1.5 text-[10px]">
+                <i class="fa-solid fa-chart-pie text-base mb-0.5"></i>
+                <span>Home</span>
+            </button>
+            <button onclick="switchTab('subjects')" class="mobile-nav-btn text-slate-400 flex flex-col items-center p-1.5 text-[10px]">
+                <i class="fa-solid fa-book text-base mb-0.5"></i>
+                <span>Mapel</span>
+            </button>
+            <button onclick="switchTab('generator')" class="mobile-nav-btn text-slate-400 flex flex-col items-center p-1.5 text-[10px]">
+                <i class="fa-solid fa-wand-magic-sparkles text-base mb-0.5"></i>
+                <span>Jadwal</span>
+            </button>
+            <button onclick="switchTab('checklist')" class="mobile-nav-btn text-slate-400 flex flex-col items-center p-1.5 text-[10px]">
+                <i class="fa-solid fa-list-check text-base mb-0.5"></i>
+                <span>Progress</span>
+            </button>
+            <button onclick="switchTab('errorlog')" class="mobile-nav-btn text-slate-400 flex flex-col items-center p-1.5 text-[10px]">
+                <i class="fa-solid fa-triangle-exclamation text-base mb-0.5"></i>
+                <span>Evaluasi</span>
+            </button>
+            <button onclick="switchTab('pomodoro')" class="mobile-nav-btn text-slate-400 flex flex-col items-center p-1.5 text-[10px]">
+                <i class="fa-solid fa-stopwatch text-base mb-0.5"></i>
+                <span>Timer</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- MODAL 1: SWITCH / ADD USER NAME MODAL -->
+    <div id="modal-profile" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 border border-slate-100">
+            <div class="text-center">
+                <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl mx-auto mb-2">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Pilih / Tambah Nama Profil</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Semua orang bisa merasakan aplikasi ini dengan nama mereka sendiri!</p>
+            </div>
+
+            <!-- Existing User Selection -->
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-700">Pilih Profil Terdaftar:</label>
+                <div id="profiles-list-select" class="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <div class="relative flex py-1 items-center">
+                <div class="flex-grow border-t border-slate-200"></div>
+                <span class="flex-shrink mx-3 text-[10px] text-slate-400 uppercase font-semibold">Atau Buat Baru</span>
+                <div class="flex-grow border-t border-slate-200"></div>
+            </div>
+
+            <!-- New Profile Form -->
+            <form onsubmit="handleCreateNewProfile(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap / Panggilan <span class="text-rose-500">*</span></label>
+                    <input type="text" id="modal-new-name" required placeholder="Masukkan nama Anda..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Target Belajar Utama</label>
+                    <input type="text" id="modal-new-goal" placeholder="Misal: UTBK SNBT / Ujian Sekolah" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md shadow-indigo-200">
+                    <i class="fa-solid fa-user-plus mr-1"></i> Masuk Sebagai Profil Baru
+                </button>
+            </form>
+
+            <div class="pt-2 text-center">
+                <button onclick="closeProfileModal()" id="btn-close-modal-profile" class="text-xs text-slate-400 hover:text-slate-600 font-medium">Batal / Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ADD / EDIT SUBJECT MODAL -->
+    <div id="modal-subject" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 id="modal-subject-title" class="text-base font-bold text-slate-800">Tambah Mata Pelajaran</h3>
+                <button onclick="closeSubjectModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form id="form-subject" onsubmit="saveSubject(event)" class="space-y-4">
+                <input type="hidden" id="subj-edit-id" value="">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Mata Pelajaran <span class="text-rose-500">*</span></label>
+                    <input type="text" id="subj-name" required placeholder="Contoh: Matematika IPA" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tingkat Kesulitan / Bobot <span class="text-rose-500">*</span></label>
+                    <select id="subj-difficulty" required class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-indigo-500 bg-white">
+                        <option value="Sulit">Sulit (Bobot Tinggi - Lebih Sering)</option>
+                        <option value="Sedang" selected>Sedang (Bobot Normal)</option>
+                        <option value="Mudah">Mudah (Bobot Rendah)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Warna Label</label>
+                    <div class="flex space-x-2">
+                        <input type="color" id="subj-color" value="#6366f1" class="h-9 w-14 rounded-lg cursor-pointer border border-slate-300 p-0.5">
+                        <span class="text-xs text-slate-500 self-center">Pilih warna penanda mapel</span>
+                    </div>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2 border-t border-slate-100">
+                    <button type="button" onclick="closeSubjectModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-medium">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700">Simpan Mapel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: ADD / EDIT ERROR LOG MODAL -->
+    <div id="modal-errorlog" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-100">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800">Tambah Catatan Materi Sulit</h3>
+                <button onclick="closeErrorLogModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form id="form-errorlog" onsubmit="saveErrorLog(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Mata Pelajaran <span class="text-rose-500">*</span></label>
+                    <select id="err-subject-select" required class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:ring-indigo-500">
+                        <!-- Dynamic list -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Topik / Judul Soal Sulit <span class="text-rose-500">*</span></label>
+                    <input type="text" id="err-topic" required placeholder="Contoh: Turunan Trigonometri / Reaksi Redoks" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Kesalahan & Solusi Belajar</label>
+                    <textarea id="err-notes" rows="3" placeholder="Tuliskan penyebab salah dan cara pengerjaan yang benar..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2 border-t border-slate-100">
+                    <button type="button" onclick="closeErrorLogModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-medium">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700">Simpan Error Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* ==========================================================================
+           GLOBAL STATE MANAGEMENT (MULTI-PROFILE PERSISTENCE)
+           ========================================================================== */
+        const STORAGE_KEY_PROFILES = 'study_planner_profiles_v1';
+        const STORAGE_KEY_ACTIVE = 'study_planner_active_user_v1';
+
+        // Memory Store
+        let profiles = []; // List of all registered profiles
+        let activeUserId = null; // Currently active profile ID
+        let activeData = {
+            profile: {
+                id: null,
+                name: '',
+                className: '',
+                goal: '',
+                targetDate: '',
+                durationDays: 14,
+                maxHoursPerDay: 2,
+                startTime: '19:00',
+                endTime: '21:00'
+            },
+            subjects: [],      // Array of subject objects
+            schedule: [],      // Array of day schedules generated
+            errorLogs: [],     // Array of error log items
+            pomodoroStats: { completedSessions: 0, totalMinutes: 0 }
+        };
+
+        // Pomodoro State
+        let pomoInterval = null;
+        let pomoTimeLeft = 25 * 60;
+        let pomoIsRunning = false;
+        let pomoCurrentMode = 'study'; // 'study', 'short', 'long'
+
+        /* ==========================================================================
+           INITIALIZATION & LOCAL STORAGE
+           ========================================================================== */
+        window.onload = function() {
+            loadAllDataFromStorage();
+            if (!activeUserId || !activeData.profile.name) {
+                // Show initial profile setup modal
+                openProfileModal(true);
+            } else {
+                updateUIAll();
+            }
+        };
+
+        function loadAllDataFromStorage() {
+            try {
+                const storedProfiles = localStorage.getItem(STORAGE_KEY_PROFILES);
+                if (storedProfiles) {
+                    profiles = JSON.parse(storedProfiles);
+                } else {
+                    profiles = [];
+                }
+
+                activeUserId = localStorage.getItem(STORAGE_KEY_ACTIVE);
+
+                if (activeUserId && profiles.length > 0) {
+                    const found = profiles.find(p => p.profile.id === activeUserId);
+                    if (found) {
+                        activeData = found;
+                    } else if (profiles[0]) {
+                        activeData = profiles[0];
+                        activeUserId = activeData.profile.id;
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading localStorage:", e);
+                profiles = [];
+            }
+        }
+
+        function saveDataToStorage() {
+            if (!activeData.profile.id) return;
+            
+            // Update active user in profiles array
+            const idx = profiles.findIndex(p => p.profile.id === activeData.profile.id);
+            if (idx !== -1) {
+                profiles[idx] = activeData;
+            } else {
+                profiles.push(activeData);
+            }
+
+            localStorage.setItem(STORAGE_KEY_PROFILES, JSON.stringify(profiles));
+            localStorage.setItem(STORAGE_KEY_ACTIVE, activeData.profile.id);
+        }
+
+        /* ==========================================================================
+           UI & PROFILE SWITCHER MODAL LOGIC
+           ========================================================================== */
+        function openProfileModal(isFirstRun = false) {
+            const modal = document.getElementById('modal-profile');
+            const closeBtn = document.getElementById('btn-close-modal-profile');
+            const listContainer = document.getElementById('profiles-list-select');
+
+            // Populate profiles list
+            listContainer.innerHTML = '';
+            if (profiles.length === 0) {
+                listContainer.innerHTML = `<p class="text-xs text-slate-400 italic">Belum ada profil terdaftar.</p>`;
+            } else {
+                profiles.forEach(p => {
+                    const isActive = p.profile.id === activeUserId;
+                    const item = document.createElement('div');
+                    item.className = `p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${isActive ? 'bg-indigo-50 border-indigo-300 font-semibold' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`;
+                    item.onclick = () => switchProfile(p.profile.id);
+                    item.innerHTML = `
+                        <div class="flex items-center space-x-2.5 overflow-hidden">
+                            <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                                ${p.profile.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="truncate text-xs">
+                                <p class="text-slate-800 truncate">${p.profile.name} ${isActive ? '<span class="text-[10px] text-indigo-600 font-bold ml-1">(Aktif)</span>' : ''}</p>
+                                <p class="text-[10px] text-slate-400 truncate">${p.profile.goal || 'Belum set target'}</p>
+                            </div>
+                        </div>
+                        ${isActive ? '<i class="fa-solid fa-check text-indigo-600 text-xs"></i>' : ''}
+                    `;
+                    listContainer.appendChild(item);
+                });
+            }
+
+            if (isFirstRun && (!activeUserId || !activeData.profile.name)) {
+                closeBtn.classList.add('hidden');
+            } else {
+                closeBtn.classList.remove('hidden');
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('modal-profile').classList.add('hidden');
+        }
+
+        function handleCreateNewProfile(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('modal-new-name').value.trim();
+            const goalInput = document.getElementById('modal-new-goal').value.trim();
+
+            if (!nameInput) return;
+
+            const newId = 'user_' + Date.now();
+            const newProfileObj = {
+                profile: {
+                    id: newId,
+                    name: nameInput,
+                    className: '',
+                    goal: goalInput || 'Target Belajar Harian',
+                    targetDate: '',
+                    durationDays: 14,
+                    maxHoursPerDay: 2,
+                    startTime: '19:00',
+                    endTime: '21:00'
+                },
+                subjects: [
+                    { id: 'subj_1', name: 'Matematika', difficulty: 'Sulit', color: '#6366f1' },
+                    { id: 'subj_2', name: 'Bahasa Inggris', difficulty: 'Sedang', color: '#10b981' }
+                ],
+                schedule: [],
+                errorLogs: [],
+                pomodoroStats: { completedSessions: 0, totalMinutes: 0 }
+            };
+
+            profiles.push(newProfileObj);
+            activeUserId = newId;
+            activeData = newProfileObj;
+
+            saveDataToStorage();
+            closeProfileModal();
+            updateUIAll();
+
+            showToast(`Profil baru "${nameInput}" berhasil dibuat!`, 'success');
+            document.getElementById('modal-new-name').value = '';
+            document.getElementById('modal-new-goal').value = '';
+        }
+
+        function switchProfile(id) {
+            const found = profiles.find(p => p.profile.id === id);
+            if (found) {
+                activeUserId = id;
+                activeData = found;
+                saveDataToStorage();
+                closeProfileModal();
+                updateUIAll();
+                showToast(`Beralih ke profil "${activeData.profile.name}"`, 'info');
+            }
+        }
+
+        /* ==========================================================================
+           MAIN UI UPDATE CONTROLLER
+           ========================================================================== */
+        function updateUIAll() {
+            const prof = activeData.profile;
+
+            // Header & Sidebar info
+            document.getElementById('sidebar-user-name').innerText = prof.name || 'Set Nama Anda';
+            document.getElementById('sidebar-user-target').innerText = prof.goal || 'Target belum diset';
+            document.getElementById('sidebar-avatar').innerText = prof.name ? prof.name.charAt(0).toUpperCase() : '?';
+
+            document.getElementById('mobile-header-user').innerText = prof.name || 'Atur Profil';
+
+            document.getElementById('top-user-avatar').innerText = prof.name ? prof.name.charAt(0).toUpperCase() : '?';
+            document.getElementById('top-greeting').innerText = `Halo, ${prof.name || 'Teman'}! 👋`;
+            document.getElementById('top-user-sub').innerText = prof.goal 
+                ? `Fokus Target: ${prof.goal} | Durasi: ${prof.durationDays || 14} Hari`
+                : 'Silakan atur profil dan target belajar Anda di menu Profil.';
+            
+            const targetTag = document.getElementById('top-target-tag');
+            if (prof.goal) {
+                targetTag.innerText = prof.goal;
+                targetTag.classList.remove('hidden');
+            } else {
+                targetTag.classList.add('hidden');
+            }
+
+            // Populate Profile Form Fields
+            document.getElementById('prof-input-name').value = prof.name || '';
+            document.getElementById('prof-input-class').value = prof.className || '';
+            document.getElementById('prof-input-goal').value = prof.goal || '';
+            document.getElementById('prof-input-date').value = prof.targetDate || '';
+            document.getElementById('prof-input-duration').value = prof.durationDays || 14;
+            document.getElementById('prof-input-maxhours').value = prof.maxHoursPerDay || 2;
+            document.getElementById('prof-input-starttime').value = prof.startTime || '19:00';
+            document.getElementById('prof-input-endtime').value = prof.endTime || '21:00';
+
+            // Dashboard Summary
+            document.getElementById('dash-profile-name').innerText = prof.name || '-';
+            document.getElementById('dash-profile-goal').innerText = prof.goal || '-';
+            document.getElementById('dash-profile-duration').innerText = (prof.durationDays || 14) + ' Hari';
+            document.getElementById('dash-profile-hours').innerText = (prof.maxHoursPerDay || 2) + ' Jam / Hari';
+
+            // Calculations for Progress
+            renderDashboardStats();
+            renderSubjectsList();
+            renderGeneratorPrerequisites();
+            renderSchedulePreview();
+            renderChecklist();
+            renderErrorLogs();
+            updatePomodoroUI();
+        }
+
+        /* ==========================================================================
+           TAB NAVIGATION
+           ========================================================================== */
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            
+            // Deactivate all navbar buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.className = 'nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-slate-200';
+            });
+
+            // Deactivate mobile nav buttons
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                btn.classList.remove('text-indigo-400');
+                btn.classList.add('text-slate-400');
+            });
+
+            // Show selected tab content
+            const targetTab = document.getElementById('tab-' + tabId);
+            if (targetTab) targetTab.classList.remove('hidden');
+
+            // Highlight corresponding desktop nav
+            const targetNav = document.getElementById('nav-' + tabId);
+            if (targetNav) {
+                targetNav.className = 'nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-indigo-400 bg-indigo-900/40 border border-indigo-700/50';
+            }
+        }
+
+        /* ==========================================================================
+           TAB 2: SAVE PROFILE & TARGET FORM
+           ========================================================================== */
+        function saveProfileForm(e) {
+            e.preventDefault();
+            activeData.profile.name = document.getElementById('prof-input-name').value.trim();
+            activeData.profile.className = document.getElementById('prof-input-class').value.trim();
+            activeData.profile.goal = document.getElementById('prof-input-goal').value.trim();
+            activeData.profile.targetDate = document.getElementById('prof-input-date').value;
+            activeData.profile.durationDays = parseInt(document.getElementById('prof-input-duration').value) || 14;
+            activeData.profile.maxHoursPerDay = parseInt(document.getElementById('prof-input-maxhours').value) || 2;
+            activeData.profile.startTime = document.getElementById('prof-input-starttime').value;
+            activeData.profile.endTime = document.getElementById('prof-input-endtime').value;
+
+            saveDataToStorage();
+            updateUIAll();
+            showToast('Profil & Target berhasil disimpan!', 'success');
+        }
+
+        /* ==========================================================================
+           TAB 3: SUBJECTS MANAGER
+           ========================================================================== */
+        function renderSubjectsList() {
+            const grid = document.getElementById('subjects-list-grid');
+            grid.innerHTML = '';
+
+            if (!activeData.subjects || activeData.subjects.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center">
+                        <i class="fa-solid fa-book-open text-3xl text-slate-300 mb-2"></i>
+                        <p class="text-sm font-semibold text-slate-700">Belum Ada Mata Pelajaran</p>
+                        <p class="text-xs text-slate-400 mt-1">Tambahkan mapel untuk dapat membuat jadwal otomatis.</p>
+                        <button onclick="openSubjectModal()" class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold">
+                            + Tambah Mapel
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            activeData.subjects.forEach(subj => {
+                const diffBadge = subj.difficulty === 'Sulit' 
+                    ? 'bg-rose-100 text-rose-700 border-rose-200' 
+                    : subj.difficulty === 'Sedang' 
+                    ? 'bg-amber-100 text-amber-700 border-amber-200' 
+                    : 'bg-emerald-100 text-emerald-700 border-emerald-200';
+
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="w-4 h-4 rounded-full inline-block" style="background-color: ${subj.color || '#6366f1'}"></span>
+                            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${diffBadge}">
+                                Kesulitan: ${subj.difficulty}
+                            </span>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-base mb-1">${subj.name}</h3>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100 mt-4">
+                        <button onclick="editSubject('${subj.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors" title="Edit Mapel">
+                            <i class="fa-solid fa-pen-to-square text-sm"></i>
+                        </button>
+                        <button onclick="deleteSubject('${subj.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 transition-colors" title="Hapus Mapel">
+                            <i class="fa-solid fa-trash-can text-sm"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openSubjectModal(subjId = null) {
+            const modal = document.getElementById('modal-subject');
+            const title = document.getElementById('modal-subject-title');
+            
+            if (subjId) {
+                const subj = activeData.subjects.find(s => s.id === subjId);
+                if (subj) {
+                    title.innerText = 'Edit Mata Pelajaran';
+                    document.getElementById('subj-edit-id').value = subj.id;
+                    document.getElementById('subj-name').value = subj.name;
+                    document.getElementById('subj-difficulty').value = subj.difficulty;
+                    document.getElementById('subj-color').value = subj.color || '#6366f1';
+                }
+            } else {
+                title.innerText = 'Tambah Mata Pelajaran';
+                document.getElementById('subj-edit-id').value = '';
+                document.getElementById('subj-name').value = '';
+                document.getElementById('subj-difficulty').value = 'Sedang';
+                document.getElementById('subj-color').value = '#6366f1';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeSubjectModal() {
+            document.getElementById('modal-subject').classList.add('hidden');
+        }
+
+        function saveSubject(e) {
+            e.preventDefault();
+            const id = document.getElementById('subj-edit-id').value;
+            const name = document.getElementById('subj-name').value.trim();
+            const difficulty = document.getElementById('subj-difficulty').value;
+            const color = document.getElementById('subj-color').value;
+
+            if (!name) return;
+
+            if (id) {
+                // Edit
+                const subj = activeData.subjects.find(s => s.id === id);
+                if (subj) {
+                    subj.name = name;
+                    subj.difficulty = difficulty;
+                    subj.color = color;
+                }
+            } else {
+                // New
+                activeData.subjects.push({
+                    id: 'subj_' + Date.now(),
+                    name,
+                    difficulty,
+                    color
+                });
+            }
+
+            saveDataToStorage();
+            closeSubjectModal();
+            updateUIAll();
+            showToast('Mata Pelajaran berhasil disimpan!', 'success');
+        }
+
+        function editSubject(id) {
+            openSubjectModal(id);
+        }
+
+        function deleteSubject(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus mata pelajaran ini?')) {
+                activeData.subjects = activeData.subjects.filter(s => s.id !== id);
+                saveDataToStorage();
+                updateUIAll();
+                showToast('Mata Pelajaran berhasil dihapus', 'info');
+            }
+        }
+
+        /* ==========================================================================
+           TAB 4: SCHEDULE GENERATOR ALGORITHM
+           ========================================================================== */
+        function renderGeneratorPrerequisites() {
+            const hasProf = activeData.profile && activeData.profile.name;
+            const hasSubj = activeData.subjects && activeData.subjects.length > 0;
+
+            const iconProf = document.getElementById('gen-check-prof');
+            iconProf.className = hasProf ? 'fa-solid fa-circle-check text-emerald-500 text-base' : 'fa-solid fa-circle-xmark text-rose-500 text-base';
+            document.getElementById('gen-text-prof').innerText = hasProf ? 'Target Siap' : 'Profil Belum Lengkap';
+
+            const iconSubj = document.getElementById('gen-check-subj');
+            iconSubj.className = hasSubj ? 'fa-solid fa-circle-check text-emerald-500 text-base' : 'fa-solid fa-circle-xmark text-rose-500 text-base';
+            document.getElementById('gen-text-subj').innerText = (activeData.subjects.length) + ' Mapel terdaftar';
+        }
+
+        function generateScheduleAlgorithm() {
+            if (!activeData.subjects || activeData.subjects.length === 0) {
+                showToast('Harap tambahkan minimal 1 mata pelajaran terlebih dahulu!', 'warning');
+                switchTab('subjects');
+                return;
+            }
+
+            const duration = activeData.profile.durationDays || 14;
+            const newSchedule = [];
+
+            // Sort subjects by weight/difficulty (Sulit > Sedang > Mudah)
+            const sortedSubjects = [...activeData.subjects].sort((a, b) => {
+                const weights = { 'Sulit': 3, 'Sedang': 2, 'Mudah': 1 };
+                return weights[b.difficulty] - weights[a.difficulty];
+            });
+
+            let subjectIndex = 0;
+
+            for (let day = 1; day <= duration; day++) {
+                // Select main subject for the day
+                const mainSubject = sortedSubjects[subjectIndex % sortedSubjects.length];
+                
+                // Select secondary subject if difficulty is Sulit or alternate
+                const secondarySubject = sortedSubjects[(subjectIndex + 1) % sortedSubjects.length];
+
+                const dayTopics = [
+                    {
+                        id: `task_${day}_1`,
+                        subjectName: mainSubject.name,
+                        topic: `Pemahaman Konsep Inti ${mainSubject.name} - Bagian ${Math.ceil(day / 2)}`,
+                        completed: false,
+                        color: mainSubject.color
+                    }
+                ];
+
+                if (mainSubject.difficulty === 'Sulit') {
+                    dayTopics.push({
+                        id: `task_${day}_2`,
+                        subjectName: mainSubject.name,
+                        topic: `Latihan Soal & Pengetesan ${mainSubject.name}`,
+                        completed: false,
+                        color: mainSubject.color
+                    });
+                } else {
+                    dayTopics.push({
+                        id: `task_${day}_2`,
+                        subjectName: secondarySubject.name,
+                        topic: `Review Ringkas materi ${secondarySubject.name}`,
+                        completed: false,
+                        color: secondarySubject.color
+                    });
+                }
+
+                newSchedule.push({
+                    dayNumber: day,
+                    tasks: dayTopics
+                });
+
+                subjectIndex++;
+            }
+
+            activeData.schedule = newSchedule;
+            saveDataToStorage();
+            updateUIAll();
+
+            showToast(`Berhasil merancang jadwal belajar ${duration} hari untuk ${activeData.profile.name}!`, 'success');
+            
+            // Trigger celebration confetti
+            try {
+                confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+            } catch(e) {}
+        }
+
+        function renderSchedulePreview() {
+            const container = document.getElementById('generated-schedule-container');
+            container.innerHTML = '';
+
+            if (!activeData.schedule || activeData.schedule.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center">
+                        <p class="text-xs text-slate-400">Belum ada jadwal yang di-generate. Klik tombol di atas untuk membuat jadwal otomatis.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const header = document.createElement('div');
+            header.className = 'flex items-center justify-between my-2';
+            header.innerHTML = `<h3 class="font-bold text-slate-800 text-sm">Pratinjau Rencana Belajar (${activeData.schedule.length} Hari)</h3>`;
+            container.appendChild(header);
+
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+
+            activeData.schedule.forEach(day => {
+                const dayCard = document.createElement('div');
+                dayCard.className = 'bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm';
+                
+                let tasksHtml = '';
+                day.tasks.forEach(t => {
+                    tasksHtml += `
+                        <div class="p-2.5 bg-slate-50 rounded-xl border-l-4 flex items-start justify-between" style="border-left-color: ${t.color || '#6366f1'}">
+                            <div>
+                                <p class="text-xs font-bold text-slate-800">${t.subjectName}</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">${t.topic}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                dayCard.innerHTML = `
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                        <span class="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Hari Ke-${day.dayNumber}</span>
+                        <span class="text-[10px] text-slate-400">${day.tasks.length} Sesi Belajar</span>
+                    </div>
+                    <div class="space-y-2">
+                        ${tasksHtml}
+                    </div>
+                `;
+                grid.appendChild(dayCard);
+            });
+
+            container.appendChild(grid);
+        }
+
+        /* ==========================================================================
+           TAB 5: CHECKLIST & PROGRESS
+           ========================================================================== */
+        function renderChecklist() {
+            const container = document.getElementById('checklist-container');
+            const dayFilterSelect = document.getElementById('checklist-day-filter');
+            container.innerHTML = '';
+
+            if (!activeData.schedule || activeData.schedule.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-slate-400 text-xs">
+                        Jadwal belum di-generate. Silakan masuk ke tab <b>Generator Jadwal</b> terlebih dahulu.
+                    </div>
+                `;
+                return;
+            }
+
+            // Populate Day Filter Options
+            const currentFilter = dayFilterSelect.value;
+            dayFilterSelect.innerHTML = `<option value="all">Semua Hari (${activeData.schedule.length} Hari)</option>`;
+            activeData.schedule.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.dayNumber;
+                opt.innerText = `Hari Ke-${d.dayNumber}`;
+                dayFilterSelect.appendChild(opt);
+            });
+            dayFilterSelect.value = currentFilter || 'all';
+
+            // Filter schedule
+            const filteredDays = (dayFilterSelect.value === 'all')
+                ? activeData.schedule
+                : activeData.schedule.filter(d => d.dayNumber == dayFilterSelect.value);
+
+            filteredDays.forEach(day => {
+                day.tasks.forEach(task => {
+                    const row = document.createElement('div');
+                    row.className = `p-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors ${task.completed ? 'bg-slate-50/50' : ''}`;
+                    row.innerHTML = `
+                        <div class="flex items-start space-x-3 overflow-hidden pr-2">
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTaskCompletion('${task.id}')" 
+                                class="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                            <div class="truncate">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">Hari ${day.dayNumber}</span>
+                                    <span class="text-xs font-bold text-slate-800 truncate" style="color: ${task.color}">${task.subjectName}</span>
+                                </div>
+                                <p class="text-xs text-slate-600 mt-1 font-medium ${task.completed ? 'line-through text-slate-400' : ''}">${task.topic}</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-1 rounded-lg shrink-0 ${task.completed ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">
+                            ${task.completed ? 'Selesai' : 'Pending'}
+                        </span>
+                    `;
+                    container.appendChild(row);
+                });
+            });
+        }
+
+        function toggleTaskCompletion(taskId) {
+            if (!activeData.schedule) return;
+
+            let found = false;
+            for (let day of activeData.schedule) {
+                for (let task of day.tasks) {
+                    if (task.id === taskId) {
+                        task.completed = !task.completed;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) break;
+            }
+
+            saveDataToStorage();
+            updateUIAll();
+        }
+
+        /* ==========================================================================
+           TAB 6: ERROR LOGS / CATATAN EVALUASI
+           ========================================================================== */
+        function renderErrorLogs() {
+            const grid = document.getElementById('error-logs-grid');
+            grid.innerHTML = '';
+
+            if (!activeData.errorLogs || activeData.errorLogs.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-white p-8 rounded-2xl border border-dashed border-slate-300 text-center">
+                        <i class="fa-solid fa-file-circle-check text-3xl text-slate-300 mb-2"></i>
+                        <p class="text-sm font-semibold text-slate-700">Tidak Ada Catatan Kesalahan</p>
+                        <p class="text-xs text-slate-400 mt-1">Gunakan Error Log untuk mencatat materi/soal yang sering salah agar mudah diulas.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            activeData.errorLogs.forEach(err => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md">${err.subjectName}</span>
+                            <span class="text-[10px] text-slate-400">${err.date || ''}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-2">${err.topic}</h4>
+                        <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-line">${err.notes || 'Tidak ada catatan rinci.'}</p>
+                    </div>
+                    <div class="flex justify-end pt-3 mt-3 border-t border-slate-100">
+                        <button onclick="deleteErrorLog('${err.id}')" class="text-xs text-rose-500 hover:text-rose-700 font-medium">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Hapus Log
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openErrorLogModal() {
+            const select = document.getElementById('err-subject-select');
+            select.innerHTML = '';
+
+            if (!activeData.subjects || activeData.subjects.length === 0) {
+                showToast('Harap tambahkan mata pelajaran terlebih dahulu!', 'warning');
+                switchTab('subjects');
+                return;
+            }
+
+            activeData.subjects.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.name;
+                opt.innerText = s.name;
+                select.appendChild(opt);
+            });
+
+            document.getElementById('err-topic').value = '';
+            document.getElementById('err-notes').value = '';
+            document.getElementById('modal-errorlog').classList.remove('hidden');
+        }
+
+        function closeErrorLogModal() {
+            document.getElementById('modal-errorlog').classList.add('hidden');
+        }
+
+        function saveErrorLog(e) {
+            e.preventDefault();
+            const subjectName = document.getElementById('err-subject-select').value;
+            const topic = document.getElementById('err-topic').value.trim();
+            const notes = document.getElementById('err-notes').value.trim();
+
+            if (!topic) return;
+
+            const newLog = {
+                id: 'err_' + Date.now(),
+                subjectName,
+                topic,
+                notes,
+                date: new Date().toLocaleDateString('id-ID')
+            };
+
+            if (!activeData.errorLogs) activeData.errorLogs = [];
+            activeData.errorLogs.push(newLog);
+
+            saveDataToStorage();
+            closeErrorLogModal();
+            updateUIAll();
+            showToast('Catatan kesalahan berhasil disimpan!', 'success');
+        }
+
+        function deleteErrorLog(id) {
+            if (confirm('Hapus catatan kesalahan ini?')) {
+                activeData.errorLogs = activeData.errorLogs.filter(e => e.id !== id);
+                saveDataToStorage();
+                updateUIAll();
+                showToast('Catatan berhasil dihapus', 'info');
+            }
+        }
+
+        /* ==========================================================================
+           TAB 7 & WIDGET: POMODORO TIMER
+           ========================================================================== */
+        function setPomodoroMode(mode) {
+            pomoCurrentMode = mode;
+            pomoIsRunning = false;
+            clearInterval(pomoInterval);
+
+            const btnStudy = document.getElementById('pomo-mode-study');
+            const btnShort = document.getElementById('pomo-mode-short');
+            const btnLong = document.getElementById('pomo-mode-long');
+
+            btnStudy.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200';
+            btnShort.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200';
+            btnLong.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200';
+
+            if (mode === 'study') {
+                pomoTimeLeft = 25 * 60;
+                btnStudy.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-indigo-600 text-white';
+                document.getElementById('pomo-status-text').innerText = 'Sesi Belajar Aktif. Tetap Fokus!';
+            } else if (mode === 'short') {
+                pomoTimeLeft = 5 * 60;
+                btnShort.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-emerald-600 text-white';
+                document.getElementById('pomo-status-text').innerText = 'Istirahat Singkat. Peregangan tubuh Anda!';
+            } else if (mode === 'long') {
+                pomoTimeLeft = 15 * 60;
+                btnLong.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white';
+                document.getElementById('pomo-status-text').innerText = 'Istirahat Panjang. Minum air & rileks!';
+            }
+
+            updatePomodoroUI();
+        }
+
+        function togglePomodoroTimer() {
+            if (pomoIsRunning) {
+                // Pause
+                clearInterval(pomoInterval);
+                pomoIsRunning = false;
+            } else {
+                // Start
+                pomoIsRunning = true;
+                pomoInterval = setInterval(() => {
+                    if (pomoTimeLeft > 0) {
+                        pomoTimeLeft--;
+                        updatePomodoroDisplayOnly();
+                    } else {
+                        // Timer finished
+                        clearInterval(pomoInterval);
+                        pomoIsRunning = false;
+                        
+                        if (pomoCurrentMode === 'study') {
+                            activeData.pomodoroStats.completedSessions = (activeData.pomodoroStats.completedSessions || 0) + 1;
+                            activeData.pomodoroStats.totalMinutes = (activeData.pomodoroStats.totalMinutes || 0) + 25;
+                            saveDataToStorage();
+                            showToast('Sesi belajar selesai! Waktunya istirahat!', 'success');
+                        } else {
+                            showToast('Waktu istirahat selesai! Kembali belajar!', 'info');
+                        }
+
+                        updatePomodoroUI();
+                    }
+                }, 1000);
+            }
+
+            updatePomodoroButtonState();
+        }
+
+        function quickPomodoroToggle() {
+            togglePomodoroTimer();
+            updatePomodoroButtonState();
+        }
+
+        function resetPomodoro() {
+            pomoIsRunning = false;
+            clearInterval(pomoInterval);
+            if (pomoCurrentMode === 'study') pomoTimeLeft = 25 * 60;
+            else if (pomoCurrentMode === 'short') pomoTimeLeft = 5 * 60;
+            else if (pomoCurrentMode === 'long') pomoTimeLeft = 15 * 60;
+            updatePomodoroUI();
+        }
+
+        function updatePomodoroUI() {
+            updatePomodoroDisplayOnly();
+            updatePomodoroButtonState();
+
+            // Stats
+            const stats = activeData.pomodoroStats || { completedSessions: 0, totalMinutes: 0 };
+            document.getElementById('pomo-completed-count').innerText = stats.completedSessions + ' Sesi';
+            document.getElementById('pomo-total-time').innerText = stats.totalMinutes + ' Menit';
+        }
+
+        function updatePomodoroDisplayOnly() {
+            const mins = Math.floor(pomoTimeLeft / 60);
+            const secs = pomoTimeLeft % 60;
+            const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+            document.getElementById('pomo-display').innerText = formatted;
+            document.getElementById('dash-timer-display').innerText = formatted;
+        }
+
+        function updatePomodoroButtonState() {
+            const mainBtnText = document.getElementById('pomo-btn-text');
+            const mainIcon = document.getElementById('pomo-icon');
+            const dashBtn = document.getElementById('dash-timer-btn');
+
+            if (pomoIsRunning) {
+                mainBtnText.innerText = 'Jeda';
+                mainIcon.className = 'fa-solid fa-pause';
+                if (dashBtn) dashBtn.innerHTML = '<i class="fa-solid fa-pause mr-1"></i> Jeda';
+            } else {
+                mainBtnText.innerText = 'Mulai Fokus';
+                mainIcon.className = 'fa-solid fa-play';
+                if (dashBtn) dashBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Mulai';
+            }
+        }
+
+        /* ==========================================================================
+           DASHBOARD CALCULATIONS
+           ========================================================================== */
+        function renderDashboardStats() {
+            // Count Schedule tasks
+            let totalTasks = 0;
+            let completedTasks = 0;
+
+            if (activeData.schedule) {
+                activeData.schedule.forEach(day => {
+                    day.tasks.forEach(task => {
+                        totalTasks++;
+                        if (task.completed) completedTasks++;
+                    });
+                });
+            }
+
+            const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+            document.getElementById('dash-progress-percent').innerText = percent + '%';
+            document.getElementById('dash-progress-bar').style.width = percent + '%';
+            document.getElementById('dash-progress-text').innerText = `${completedTasks} dari ${totalTasks} tugas selesai`;
+
+            document.getElementById('dash-total-subjects').innerText = activeData.subjects ? activeData.subjects.length : 0;
+            document.getElementById('dash-target-days').innerText = (activeData.profile.durationDays || 14) + ' Hari';
+            document.getElementById('dash-target-date').innerText = activeData.profile.targetDate ? `Ujian: ${activeData.profile.targetDate}` : 'Tanggal belum di-set';
+            document.getElementById('dash-total-errors').innerText = activeData.errorLogs ? activeData.errorLogs.length : 0;
+
+            // Today's schedule summary
+            const todayContainer = document.getElementById('dash-today-schedule');
+            todayContainer.innerHTML = '';
+
+            if (!activeData.schedule || activeData.schedule.length === 0) {
+                todayContainer.innerHTML = `
+                    <p class="text-xs text-slate-400 py-3 text-center">Belum ada jadwal. Silakan klik tab Generator Jadwal.</p>
+                `;
+                return;
+            }
+
+            const firstDay = activeData.schedule[0];
+            firstDay.tasks.forEach(t => {
+                const item = document.createElement('div');
+                item.className = 'p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs';
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="w-3 h-3 rounded-full" style="background-color: ${t.color}"></span>
+                        <div>
+                            <p class="font-bold text-slate-800">${t.subjectName}</p>
+                            <p class="text-[11px] text-slate-500">${t.topic}</p>
+                        </div>
+                    </div>
+                    <button onclick="switchTab('checklist')" class="text-indigo-600 font-semibold hover:underline">Buka Progress</button>
+                `;
+                todayContainer.appendChild(item);
+            });
+        }
+
+        /* ==========================================================================
+           TOAST NOTIFICATION SYSTEM
+           ========================================================================== */
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const bgClass = type === 'success' 
+                ? 'bg-emerald-600 text-white' 
+                : type === 'warning' 
+                ? 'bg-amber-500 text-white' 
+                : 'bg-indigo-600 text-white';
+
+            toast.className = `px-4 py-3 rounded-xl shadow-lg text-xs font-medium flex items-center space-x-2 transition-all transform translate-y-2 pointer-events-auto ${bgClass}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-info'}"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
